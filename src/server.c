@@ -30,12 +30,9 @@ void* handle_client(void* arg) {
     print_log(client_sock, buffer);
 
     /* ---------------- ROUTING ---------------- */
-    if (strstr(buffer, "GET /ota/check")) {
-
-        char client_version[32] = {0};
-        extract_query_version(buffer, client_version);
-
-        send_check_response(client_sock, client_version);
+    /* ---------------- ROUTING ---------------- */
+    if (strstr(buffer, "POST /ota/check")) {
+        send_check_response(client_sock, buffer);
     }
     else if (strstr(buffer, "GET /ota/down/")) {
 

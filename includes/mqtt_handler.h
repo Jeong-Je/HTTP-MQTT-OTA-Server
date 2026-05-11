@@ -7,7 +7,7 @@
 #define MQTT_QOS       1
 #define MQTT_TIMEOUT   1000L
 
-void publish_update_notification(const char* version);
+void publish_update_notification(const char* address, const char* version);
 
 void* version_monitor_thread(void* arg);
 

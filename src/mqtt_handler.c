@@ -6,14 +6,33 @@
 
 #include "MQTTClient.h"
 
-#include "config.h"
 #include "crypto.h"
 #include "ota.h"
 
+extern char SERVER_IP[64];
+extern int PORT;
 
-void publish_update_notification(const char* version) {
+/* ECU 목록 */
+typedef struct {
+    char address[16];
+    char previous_version[32];
+} ECUInfo;
+
+ECUInfo ecus[] = {
+    {"1234", ""},
+    {"5678", ""}
+};
+
+#define ECU_COUNT (sizeof(ecus) / sizeof(ECUInfo))
+
+/* MQTT 발행 */
+void publish_update_notification(
+    const char* address,
+    const char* version
+) {
 
     MQTTClient client;
+
     MQTTClient_connectOptions conn_opts =
         MQTTClient_connectOptions_initializer;
 
@@ -30,18 +49,23 @@ void publish_update_notification(const char* version) {
     rc = MQTTClient_connect(client, &conn_opts);
 
     if (rc != MQTTCLIENT_SUCCESS) {
+
         printf("MQTT connect failed: %d\n", rc);
+
         return;
     }
 
     /* HEX 경로 */
     char hex_path[128];
 
-    sprintf(hex_path,
-            "hex/%s.hex",
-            version);
+    sprintf(
+        hex_path,
+        "hex/%s/%s.hex",
+        address,
+        version
+    );
 
-    /* SHA256 계산 */
+    /* SHA256 */
     char checksum[65];
 
     calculate_sha256(
@@ -50,20 +74,43 @@ void publish_update_notification(const char* version) {
     );
 
     /* MQTT payload */
-    char payload[1024];
+    char payload[2048];
 
-    sprintf(payload,
+    sprintf(
+        payload,
+
         "{"
+        "\"address\":\"%s\","
         "\"version\":\"%s\","
-        "\"firmware_url\":\"http://%s:%d/ota/down/hex/%s.hex\","
-        "\"signature_url\":\"http://%s:%d/ota/down/sig/%s.sig\","
-        "\"public_key_url\":\"http://%s:%d/ota/key/public.pem\","
+
+        "\"firmware_url\":"
+        "\"http://%s:%d/ota/down/hex/%s/%s.hex\","
+
+        "\"signature_url\":"
+        "\"http://%s:%d/ota/down/sig/%s/%s.sig\","
+
+        "\"public_key_url\":"
+        "\"http://%s:%d/ota/key/public.pem\","
+
         "\"checksum\":\"%s\""
         "}",
+
+        address,
         version,
-        SERVER_IP, PORT, version,
-        SERVER_IP, PORT, version,
-        SERVER_IP, PORT,
+
+        SERVER_IP,
+        PORT,
+        address,
+        version,
+
+        SERVER_IP,
+        PORT,
+        address,
+        version,
+
+        SERVER_IP,
+        PORT,
+
         checksum
     );
 
@@ -71,8 +118,11 @@ void publish_update_notification(const char* version) {
         MQTTClient_message_initializer;
 
     pubmsg.payload = payload;
+
     pubmsg.payloadlen = strlen(payload);
+
     pubmsg.qos = MQTT_QOS;
+
     pubmsg.retained = 0;
 
     MQTTClient_deliveryToken token;
@@ -90,50 +140,87 @@ void publish_update_notification(const char* version) {
         MQTT_TIMEOUT
     );
 
-    printf("\n[MQTT] OTA update notification published\n");
+    printf("\n");
+    printf("====================================\n");
+    printf("[MQTT OTA NOTIFICATION]\n");
+    printf("ECU ADDRESS : %s\n", address);
+    printf("VERSION     : %s\n", version);
+    printf("====================================\n");
+
     printf("TOPIC: %s\n", MQTT_TOPIC);
+
     printf("PAYLOAD:\n%s\n", payload);
 
     MQTTClient_disconnect(client, 1000);
+
     MQTTClient_destroy(&client);
 }
 
-
-
+/* 버전 감시 */
 void* version_monitor_thread(void* arg) {
 
-    char previous_version[32] = {0};
+    /* 초기 버전 로드 */
+    for (int i = 0; i < ECU_COUNT; i++) {
 
-    get_latest_version(previous_version);
+        get_latest_version(
+            ecus[i].address,
+            ecus[i].previous_version
+        );
 
-    printf("[MONITOR] current version: %s\n",
-           previous_version);
+        printf(
+            "[MONITOR] ECU %s current version: %s\n",
+            ecus[i].address,
+            ecus[i].previous_version
+        );
+    }
 
     while (1) {
 
         sleep(1);
 
-        char current_version[32] = {0};
+        for (int i = 0; i < ECU_COUNT; i++) {
 
-        get_latest_version(current_version);
+            char current_version[32] = {0};
 
-        if (strcmp(previous_version,
-                   current_version) != 0) {
-
-            printf("\n");
-            printf("====================================\n");
-            printf("[OTA NEW VERSION DETECTED]\n");
-            printf("%s -> %s\n",
-                   previous_version,
-                   current_version);
-            printf("====================================\n");
-
-            publish_update_notification(
+            get_latest_version(
+                ecus[i].address,
                 current_version
             );
 
-            strcpy(previous_version,
-                   current_version);
+            if (strcmp(
+                    ecus[i].previous_version,
+                    current_version
+                ) != 0) {
+
+                printf("\n");
+
+                printf("====================================\n");
+
+                printf("[OTA NEW VERSION DETECTED]\n");
+
+                printf(
+                    "ECU : %s\n",
+                    ecus[i].address
+                );
+
+                printf(
+                    "%s -> %s\n",
+                    ecus[i].previous_version,
+                    current_version
+                );
+
+                printf("====================================\n");
+
+                publish_update_notification(
+                    ecus[i].address,
+                    current_version
+                );
+
+                strcpy(
+                    ecus[i].previous_version,
+                    current_version
+                );
+            }
         }
     }
 
