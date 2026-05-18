@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>OTA Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="navbar">
+
+        <div class="title">
+            OTA MANAGEMENT DASHBOARD
+        </div>
+
+        <div class="subtitle">
+            Firmware Over-The-Air Control System
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-title">
+            ECU STATUS
+        </div>
+
+        <table>
+
+            <tr>
+                <th>ADDRESS</th>
+                <th>ECU</th>
+                <th>LATEST VERSION</th>
+            </tr>
+
+            {% for ecu in ecus %}
+
+            <tr>
+
+                <td>{{ ecu.address }}</td>
+
+                <td>{{ ecu.name }}</td>
+
+                <td>
+                    <span class="badge">
+                        v{{ ecu.version }}
+                    </span>
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        <a
+            class="button button-upload"
+            href="/upload"
+        >
+            Upload Firmware
+        </a>
+
+    </div>
+
+    <div class="footer">
+        OTA Embedded Project Dashboard
+    </div>
+
+</div>
+
+</body>
+
+</html>

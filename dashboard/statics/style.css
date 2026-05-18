@@ -1,0 +1,131 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: Arial, sans-serif;
+    padding: 40px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.title {
+    font-size: 40px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #94a3b8;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+.card-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #334155;
+    padding: 16px;
+    text-align: left;
+}
+
+td {
+    padding: 16px;
+    border-top: 1px solid #334155;
+}
+
+tr:hover {
+    background: #263449;
+}
+
+.badge {
+    background: #22c55e;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 14px;
+}
+
+.button {
+    display: inline-block;
+    background: #2563eb;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.button:hover {
+    background: #1d4ed8;
+}
+
+.button-upload {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: #334155;
+    color: white;
+    font-size: 15px;
+}
+
+input[type="file"] {
+    padding: 10px;
+}
+
+.upload-box {
+    max-width: 700px;
+    margin: auto;
+}
+
+.navbar {
+    margin-bottom: 40px;
+}
+
+.footer {
+    margin-top: 50px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+}
