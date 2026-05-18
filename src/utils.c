@@ -21,18 +21,3 @@ void extract_path(const char* request, char* path) {
     }
 }
 
-/* version parsing */
-void extract_query_version(const char* request, char* version) {
-    const char* start = strstr(request, "version=");
-    if (!start) return;
-
-    start += strlen("version=");
-
-    int i = 0;
-    while (start[i] != ' ' && start[i] != '&' && start[i] != '\0' && i < 31) {
-        version[i] = start[i];
-        i++;
-    }
-    version[i] = '\0';
-}
-

@@ -33,6 +33,9 @@ void* handle_client(void* arg) {
     /* ---------------- ROUTING ---------------- */
     if (strstr(buffer, "POST /ota/check")) {
         send_check_response(client_sock, buffer);
+    } else if (strstr(buffer, "POST /ota/report"))
+    {
+        report(client_sock, buffer);
     }
     else if (strstr(buffer, "GET /ota/down/")) {
 
@@ -55,4 +58,34 @@ void* handle_client(void* arg) {
 
     close(client_sock);
     return NULL;
+}
+
+
+/* OTA 결과 값 받기*/
+void report(int client_sock, const char* request)
+{
+    /* HTTP Header 끝 찾기 */
+    const char* body = strstr(request, "\r\n\r\n");
+
+    if (body == NULL)
+    {
+        return;
+    }
+
+    /* JSON Body 시작 위치 */
+    body += 4;
+
+    printf("\n====================================\n");
+    printf("[OTA REPORT RECEIVED]\n");
+    printf("%s\n", body);
+    printf("====================================\n");
+
+    /* 응답 */
+    const char* response =
+    "HTTP/1.1 200 OK\r\n\r\n";
+
+    send(client_sock,
+         response,
+         strlen(response),
+         0);
 }
