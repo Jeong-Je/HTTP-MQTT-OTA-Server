@@ -67,17 +67,12 @@ int compare_version(
     return b < d;
 }
 
-
-/* OTA CHECK RESPONSE */
-void send_check_response(
-    int client_sock,
-    const char* request
-) {
-    char response[8192];
-
+void build_check_response_json(
+    const char* request,
+    char* response
+)
+{
     strcpy(response,
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n\r\n"
         "{"
         "\"updates\":["
     );
@@ -86,14 +81,16 @@ void send_check_response(
 
     const char* ptr = request;
 
-    while ((ptr = strstr(ptr, "\"address\""))) {
-
+    while ((ptr = strstr(ptr, "\"address\"")))
+    {
         char address[32];
         char version[32];
 
-        sscanf(ptr,
-               "\"address\": \"%31[^\"]\"",
-               address);
+        sscanf(
+            ptr,
+            "\"address\": \"%31[^\"]\"",
+            address
+        );
 
         const char* vptr =
             strstr(ptr, "\"version\"");
@@ -101,9 +98,11 @@ void send_check_response(
         if (!vptr)
             break;
 
-        sscanf(vptr,
-               "\"version\": \"%31[^\"]\"",
-               version);
+        sscanf(
+            vptr,
+            "\"version\": \"%31[^\"]\"",
+            version
+        );
 
         char latest[32];
 
@@ -119,15 +118,22 @@ void send_check_response(
             );
 
         if (!first)
+        {
             strcat(response, ",");
+        }
 
         first = 0;
 
-        if (!need_update) {
+        /* ========================= */
+        /* NO UPDATE */
+        /* ========================= */
 
+        if (!need_update)
+        {
             char item[512];
 
-            sprintf(item,
+            sprintf(
+                item,
                 "{"
                 "\"address\":\"%s\","
                 "\"update\":false"
@@ -137,14 +143,21 @@ void send_check_response(
 
             strcat(response, item);
         }
-        else {
 
+        /* ========================= */
+        /* UPDATE AVAILABLE */
+        /* ========================= */
+
+        else
+        {
             char hex_path[256];
 
-            sprintf(hex_path,
-                    "hex/%s/%s.hex",
-                    address,
-                    latest);
+            sprintf(
+                hex_path,
+                "hex/%s/%s.hex",
+                address,
+                latest
+            );
 
             long size =
                 get_file_size(hex_path);
@@ -158,17 +171,27 @@ void send_check_response(
 
             char item[2048];
 
-            sprintf(item,
+            sprintf(
+                item,
+
                 "{"
                 "\"address\":\"%s\","
                 "\"update\":true,"
                 "\"version\":\"%s\","
-                "\"firmware_url\":\"http://%s:%d/ota/down/hex/%s/%s.hex\","
-                "\"signature_url\":\"http://%s:%d/ota/down/sig/%s/%s.sig\","
-                "\"public_key_url\":\"http://%s:%d/ota/key/public.pem\","
+
+                "\"firmware_url\":"
+                "\"http://%s:%d/ota/down/hex/%s/%s.hex\","
+
+                "\"signature_url\":"
+                "\"http://%s:%d/ota/down/sig/%s/%s.sig\","
+
+                "\"public_key_url\":"
+                "\"http://%s:%d/ota/key/public.pem\","
+
                 "\"checksum\":\"%s\","
                 "\"size\":%ld"
                 "}",
+
                 address,
                 latest,
 
@@ -196,9 +219,4 @@ void send_check_response(
     }
 
     strcat(response, "]}");
-
-    send(client_sock,
-         response,
-         strlen(response),
-         0);
 }

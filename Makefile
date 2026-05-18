@@ -22,7 +22,8 @@ LIBS = \
 	-lpaho-mqtt3c \
 	-lssl \
 	-lcrypto \
-	-lpthread
+	-lpthread \
+	-lmicrohttpd
 
 all:
 	$(CC) $(SRCS) -o $(TARGET) $(CFLAGS) $(LIBS)

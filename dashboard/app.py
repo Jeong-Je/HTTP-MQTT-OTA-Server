@@ -1,33 +1,30 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask
+from flask import render_template
+from flask import request
+from flask import redirect
+
 import os
+import requests
 
 app = Flask(__name__)
 
-BASE_DIR = "../"
+# =========================
+# CONFIG
+# =========================
 
-ECU_LIST = {
+OTA_SERVER = "http://192.168.202.206:4321"
+
+UPLOAD_DIR = "./uploads"
+
+os.makedirs(
+    UPLOAD_DIR,
+    exist_ok=True
+)
+
+ECU_NAME = {
     "1234": "MOTOR ECU",
     "5678": "STEERING ECU"
 }
-
-# =========================
-# UTIL
-# =========================
-
-def get_latest_version(ecu):
-
-    version_file = f"{BASE_DIR}/hex/{ecu}/version.list"
-
-    if not os.path.exists(version_file):
-        return "0.0"
-
-    with open(version_file, "r") as f:
-        lines = f.readlines()
-
-    if not lines:
-        return "0.0"
-
-    return lines[-1].strip()
 
 # =========================
 # MAIN PAGE
@@ -38,15 +35,41 @@ def index():
 
     ecus = []
 
-    for addr, name in ECU_LIST.items():
+    try:
+        res = requests.post(
+            OTA_SERVER + "/ota/check",
+            json={
+                "device_id": "0001",
+                "ecus": [
+                    {
+                        "address": "1234",
+                        "version": "1.0"
+                    },
+                    {
+                        "address": "5678",
+                        "version": "1.0"
+                    }
+                ]
+            },
+            timeout=3
+        )
 
-        version = get_latest_version(addr)
+        data = res.json()
 
-        ecus.append({
-            "address": addr,
-            "name": name,
-            "version": version
-        })
+        updates = data.get("updates", [])
+
+        ecus = [
+            {
+                "address": u["address"],
+                "name": ECU_NAME.get(u["address"], "UNKNOWN"),
+                "version": u.get("version", "0.0"),
+                "update_required": u.get("update_required", False)
+            }
+            for u in updates
+        ]
+
+    except Exception as e:
+        print("\n[OTA CHECK ERROR]", e)
 
     return render_template(
         "index.html",
@@ -62,7 +85,7 @@ def upload_page():
 
     return render_template(
         "upload.html",
-        ecus=ECU_LIST
+        ecus=ECU_NAME
     )
 
 # =========================
@@ -70,7 +93,7 @@ def upload_page():
 # =========================
 
 @app.route("/upload", methods=["POST"])
-def upload_firmware():
+def upload_action():
 
     ecu = request.form["ecu"]
     version = request.form["version"]
@@ -78,32 +101,30 @@ def upload_firmware():
     hex_file = request.files["hex_file"]
     sig_file = request.files["sig_file"]
 
-    hex_dir = f"{BASE_DIR}/hex/{ecu}"
-    sig_dir = f"{BASE_DIR}/sig/{ecu}"
+    try:
+        files = {
+            "hex_file": (hex_file.filename, hex_file.stream, hex_file.mimetype),
+            "sig_file": (sig_file.filename, sig_file.stream, sig_file.mimetype)
+        }
 
-    os.makedirs(hex_dir, exist_ok=True)
-    os.makedirs(sig_dir, exist_ok=True)
+        data = {
+            "address": ecu,
+            "version": version
+        }
 
-    hex_path = f"{hex_dir}/{version}.hex"
-    sig_path = f"{sig_dir}/{version}.sig"
+        res = requests.post(
+            OTA_SERVER + "/upload",
+            data=data,
+            files=files,
+            timeout=10
+        )
 
-    # 파일 저장
-    hex_file.save(hex_path)
-    sig_file.save(sig_path)
+        print("\n[OTA UPLOAD RESPONSE]")
+        print(res.status_code)
+        print(res.text)
 
-    # version.list append
-    version_list = f"{hex_dir}/version.list"
-
-    with open(version_list, "a") as f:
-        f.write(version + "\n")
-
-    print("\n==============================")
-    print("[FIRMWARE UPLOAD]")
-    print(f"ECU     : {ecu}")
-    print(f"VERSION : {version}")
-    print(f"HEX     : {hex_path}")
-    print(f"SIG     : {sig_path}")
-    print("==============================\n")
+    except Exception as e:
+        print("\n[UPLOAD ERROR]", e)
 
     return redirect("/")
 

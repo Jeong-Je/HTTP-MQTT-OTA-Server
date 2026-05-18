@@ -9,6 +9,4 @@
 
 void publish_update_notification(const char* address, const char* version);
 
-void* version_monitor_thread(void* arg);
-
 #endif
