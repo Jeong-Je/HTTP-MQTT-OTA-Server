@@ -12,7 +12,7 @@ app = Flask(__name__)
 # CONFIG
 # =========================
 
-OTA_SERVER = "http://192.168.202.206:4321"
+OTA_SERVER = "http://192.168.200.135:4321"
 
 UPLOAD_DIR = "./uploads"
 
@@ -43,11 +43,11 @@ def index():
                 "ecus": [
                     {
                         "address": "1234",
-                        "version": "1.0"
+                        "version": "0.0"
                     },
                     {
                         "address": "5678",
-                        "version": "1.0"
+                        "version": "0.0"
                     }
                 ]
             },
@@ -61,9 +61,18 @@ def index():
         ecus = [
             {
                 "address": u["address"],
-                "name": ECU_NAME.get(u["address"], "UNKNOWN"),
-                "version": u.get("version", "0.0"),
-                "update_required": u.get("update_required", False)
+                "name": ECU_NAME.get(
+                    u["address"],
+                    "UNKNOWN"
+                ),
+                "version": u.get(
+                    "version",
+                    "0.0"
+                ),
+                "update_required": u.get(
+                    "update_required",
+                    False
+                )
             }
             for u in updates
         ]
@@ -92,19 +101,26 @@ def upload_page():
 # UPLOAD ACTION
 # =========================
 
-@app.route("/upload", methods=["POST"])
+@app.route(
+    "/upload",
+    methods=["POST"]
+)
 def upload_action():
 
     ecu = request.form["ecu"]
+
     version = request.form["version"]
 
     hex_file = request.files["hex_file"]
-    sig_file = request.files["sig_file"]
 
     try:
+
         files = {
-            "hex_file": (hex_file.filename, hex_file.stream, hex_file.mimetype),
-            "sig_file": (sig_file.filename, sig_file.stream, sig_file.mimetype)
+            "hex_file": (
+                hex_file.filename,
+                hex_file.stream,
+                hex_file.mimetype
+            )
         }
 
         data = {
@@ -116,14 +132,17 @@ def upload_action():
             OTA_SERVER + "/upload",
             data=data,
             files=files,
-            timeout=10
+            timeout=30
         )
 
-        print("\n[OTA UPLOAD RESPONSE]")
-        print(res.status_code)
-        print(res.text)
+        print("\n==============================")
+        print("[OTA UPLOAD RESPONSE]")
+        print("STATUS :", res.status_code)
+        print("BODY   :", res.text)
+        print("==============================")
 
     except Exception as e:
+
         print("\n[UPLOAD ERROR]", e)
 
     return redirect("/")

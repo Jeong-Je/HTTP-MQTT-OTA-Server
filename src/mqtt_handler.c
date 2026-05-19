@@ -93,9 +93,6 @@ void publish_update_notification(
         "\"signature_url\":"
         "\"http://%s:%d/ota/down/sig/%s/%s.sig\","
 
-        "\"public_key_url\":"
-        "\"http://%s:%d/ota/key/public.pem\","
-
         "\"checksum\":\"%s\""
 
         "}",
@@ -112,9 +109,6 @@ void publish_update_notification(
         PORT,
         address,
         version,
-
-        SERVER_IP,
-        PORT,
 
         checksum
     );

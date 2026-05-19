@@ -185,9 +185,6 @@ void build_check_response_json(
                 "\"signature_url\":"
                 "\"http://%s:%d/ota/down/sig/%s/%s.sig\","
 
-                "\"public_key_url\":"
-                "\"http://%s:%d/ota/key/public.pem\","
-
                 "\"checksum\":\"%s\","
                 "\"size\":%ld"
                 "}",
@@ -204,9 +201,6 @@ void build_check_response_json(
                 PORT,
                 address,
                 latest,
-
-                SERVER_IP,
-                PORT,
 
                 checksum,
                 size
