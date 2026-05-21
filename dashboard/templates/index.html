@@ -16,6 +16,10 @@
 
 <div class="container">
 
+    <!-- ========================= -->
+    <!-- NAVBAR -->
+    <!-- ========================= -->
+
     <div class="navbar">
 
         <div class="title">
@@ -27,6 +31,10 @@
         </div>
 
     </div>
+
+    <!-- ========================= -->
+    <!-- ECU STATUS -->
+    <!-- ========================= -->
 
     <div class="card">
 
@@ -46,14 +54,20 @@
 
             <tr>
 
-                <td>{{ ecu.address }}</td>
-
-                <td>{{ ecu.name }}</td>
+                <td>
+                    {{ ecu.address }}
+                </td>
 
                 <td>
+                    {{ ecu.name }}
+                </td>
+
+                <td>
+
                     <span class="badge">
                         v{{ ecu.version }}
                     </span>
+
                 </td>
 
             </tr>
@@ -71,11 +85,102 @@
 
     </div>
 
+    <!-- ========================= -->
+    <!-- OTA LOGS -->
+    <!-- ========================= -->
+
+    <div class="card">
+
+        <div class="card-title">
+            OTA LOGS
+        </div>
+
+        <div
+            class="log-box"
+            id="log-box"
+        >
+
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- FOOTER -->
+    <!-- ========================= -->
+
     <div class="footer">
         OTA Embedded Project Dashboard
     </div>
 
 </div>
+
+<!-- ========================= -->
+<!-- AUTO LOG REFRESH -->
+<!-- ========================= -->
+
+<script>
+
+async function fetchLogs()
+{
+    try
+    {
+        const res =
+            await fetch("/api/logs");
+
+        const data =
+            await res.json();
+
+        const logBox =
+            document.getElementById("log-box");
+
+        logBox.innerHTML = "";
+
+        data.logs.forEach(log =>
+        {
+            logBox.innerHTML += `
+
+                <div class="log-line">
+
+                    <span class="log-time">
+                        [${log.time}]
+                    </span>
+
+                    <span class="log-status">
+                        ${log.status}
+                    </span>
+
+                    ECU ${log.ecu_address}
+                    → v${log.version}
+
+                    <span class="log-error">
+                        ${log.error_code}
+                    </span>
+
+                </div>
+
+            `;
+        });
+    }
+
+    catch (e)
+    {
+        console.log(
+            "LOG FETCH ERROR",
+            e
+        );
+    }
+}
+
+/* FIRST LOAD */
+fetchLogs();
+
+/* AUTO REFRESH */
+setInterval(
+    fetchLogs,
+    1000
+);
+
+</script>
 
 </body>
 

@@ -2,6 +2,7 @@ from flask import Flask
 from flask import render_template
 from flask import request
 from flask import redirect
+from datetime import datetime
 
 import os
 import requests
@@ -12,7 +13,7 @@ app = Flask(__name__)
 # CONFIG
 # =========================
 
-OTA_SERVER = "http://192.168.200.135:4321"
+OTA_SERVER = "http://192.168.202.103:4321"
 
 UPLOAD_DIR = "./uploads"
 
@@ -25,6 +26,8 @@ ECU_NAME = {
     "1234": "MOTOR ECU",
     "5678": "STEERING ECU"
 }
+
+ota_logs = []
 
 # =========================
 # MAIN PAGE
@@ -82,7 +85,8 @@ def index():
 
     return render_template(
         "index.html",
-        ecus=ecus
+        ecus=ecus,
+        logs= ota_logs
     )
 
 # =========================
@@ -141,11 +145,59 @@ def upload_action():
         print("BODY   :", res.text)
         print("==============================")
 
+        ota_logs.insert(0, {
+
+        "time":
+            datetime.now().strftime(
+                "%H:%M:%S"
+            ),
+
+        "ecu_address":
+            ecu,
+
+        "version":
+            version,
+
+        "status":
+            "UPLOAD",
+
+        "error_code":
+            "0x00"
+        })
+
     except Exception as e:
 
         print("\n[UPLOAD ERROR]", e)
 
     return redirect("/")
+
+
+@app.route(
+    "/api/log",
+    methods=["POST"]
+)
+def add_log():
+
+    data = request.json
+
+    data["time"] = datetime.now().strftime(
+        "%H:%M:%S"
+    )
+
+    ota_logs.insert(0, data)
+
+    ota_logs[:] = ota_logs[:100]
+
+    return {
+        "result": "ok"
+    }
+
+@app.route("/api/logs")
+def api_logs():
+
+    return {
+        "logs": ota_logs
+    }
 
 # =========================
 # MAIN

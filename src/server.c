@@ -6,6 +6,10 @@
 
 #include <microhttpd.h>
 
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include "ota.h"
 #include "mqtt_handler.h"
 #include "crypto.h"
@@ -187,7 +191,8 @@ static int answer_to_connection(
         {
             /* /ota/check only */
 
-            if (strcmp(url, "/ota/check") == 0)
+            if ((strcmp(url, "/ota/check") == 0)
+                || (strcmp(url, "/ota/report") == 0))
             {
                 if (
                     con_info->body_size +
@@ -271,6 +276,56 @@ static int answer_to_connection(
                     response
                 );
 
+            MHD_destroy_response(response);
+
+            return ret;
+        }
+
+        /* ========================= */
+        /* /ota/report */
+        /* ========================= */
+
+        if (strcmp(url, "/ota/report") == 0)
+        {
+            printf("\n");
+
+            printf(
+                "====================================\n"
+            );
+
+            printf(
+                "[OTA REPORT RECEIVED]\n"
+            );
+
+            printf(
+                "%s\n",
+                con_info->body
+            );
+
+            printf(
+                "====================================\n"
+            );
+
+            const char* json =
+                "{"
+                "\"result\":\"ok\""
+                "}";
+
+            struct MHD_Response* response =
+                MHD_create_response_from_buffer(
+                    strlen(json),
+                    (void*)json,
+                    MHD_RESPMEM_PERSISTENT
+                );
+
+            int ret =
+                MHD_queue_response(
+                    connection,
+                    MHD_HTTP_OK,
+                    response
+                );
+            
+            forward_report_to_dashboard(con_info->body);
             MHD_destroy_response(response);
 
             return ret;
@@ -589,4 +644,77 @@ void start_server()
     getchar();
 
     MHD_stop_daemon(daemon);
+}
+
+
+
+void forward_report_to_dashboard(
+    const char* json_body
+)
+{
+    int sock;
+
+    struct sockaddr_in serv_addr;
+
+    sock = socket(
+        AF_INET,
+        SOCK_STREAM,
+        0
+    );
+
+    if (sock < 0)
+    {
+        perror("socket");
+
+        return;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(5000);
+
+    inet_pton(
+        AF_INET,
+        "127.0.0.1",
+        &serv_addr.sin_addr
+    );
+
+    if (
+        connect(
+            sock,
+            (struct sockaddr*)&serv_addr,
+            sizeof(serv_addr)
+        ) < 0
+    )
+    {
+        perror("connect");
+
+        close(sock);
+
+        return;
+    }
+
+    char request[4096];
+
+    sprintf(
+        request,
+
+        "POST /api/log HTTP/1.1\r\n"
+        "Host: 127.0.0.1:5000\r\n"
+        "Content-Type: application/json\r\n"
+        "Content-Length: %ld\r\n"
+        "\r\n"
+        "%s",
+
+        strlen(json_body),
+        json_body
+    );
+
+    send(
+        sock,
+        request,
+        strlen(request),
+        0
+    );
+
+    close(sock);
 }

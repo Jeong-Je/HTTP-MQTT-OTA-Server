@@ -129,3 +129,37 @@ input[type="file"] {
     color: #64748b;
     font-size: 14px;
 }
+
+.log-box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 14px;
+
+    height: 300px;
+    overflow-y: auto;
+
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.log-line {
+    padding: 8px 0;
+    border-bottom: 1px solid #1e293b;
+    color: #e2e8f0;
+}
+
+.log-line:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #94a3b8;
+    margin-right: 10px;
+}
+
+.log-status {
+    color: #22c55e;
+    font-weight: bold;
+    margin-right: 10px;
+}
