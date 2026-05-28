@@ -13,7 +13,7 @@ app = Flask(__name__)
 # CONFIG
 # =========================
 
-OTA_SERVER = "http://192.168.203.213:4321"
+OTA_SERVER = "http://192.168.202.106:4321"
 
 UPLOAD_DIR = "./uploads"
 
